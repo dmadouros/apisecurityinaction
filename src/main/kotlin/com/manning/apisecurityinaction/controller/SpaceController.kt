@@ -30,16 +30,17 @@ class SpaceController(
     @Transactional
     fun createSpace(@RequestBody body: String): ResponseEntity<Map<String, Any>> {
         val json = objectMapper.readTree(body)
-        val spaceName = json["name"]
-        val owner = json["owner"]
+        val spaceName = json["name"].textValue()
+        val owner = json["owner"].textValue()
 
         val spaceId = jdbcTemplate.query(
             "SELECT NEXT VALUE FOR space_id_seq"
         ) { resultSet: ResultSet, rowIndex: Int ->
             resultSet.getInt(1)
         }.first()
-        jdbcTemplate.execute(
-            "INSERT INTO spaces(space_id, name, owner) VALUES(${spaceId}, '${spaceName}', '${owner}');"
+        jdbcTemplate.update(
+            "INSERT INTO spaces(space_id, name, owner) VALUES(?, ?, ?);",
+            spaceId, spaceName, owner
         )
         val uri = "/spaces/${spaceId}"
         val responseBody = mapOf("name" to spaceName, "uri" to uri)
